@@ -17,3 +17,13 @@
               -4px 0 8px rgba(0, 0, 0, 0.1), /* shadow left */
               4px 0 8px rgba(0, 0, 0, 0.1); /* shadow right */
 }
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content {
+  flex-grow: 1;
+}

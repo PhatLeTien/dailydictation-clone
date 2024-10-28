@@ -14,17 +14,17 @@ const Header = ({ theme, toggleTheme }) => {
         
         <nav className="flex items-center">
           <ul className="flex space-x-6">
-            <li><a href="#" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} hover:text-blue-500`}>All exercises</a></li>
-            <li><a href="#" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} hover:text-blue-500`}>Top users</a></li>
-            <li><a href="#" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} hover:text-blue-500`}>Video lessons</a></li>
+            <li><a href="/all-excercises" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} hover:text-blue-500`}>All exercises</a></li>
+            <li><a href="/top-users" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} hover:text-blue-500`}>Top users</a></li>
+            <li><a href="/video-lessons" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} hover:text-blue-500`}>Video lessons</a></li>
             <li><a href="/learntogether" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} hover:text-blue-500`}>Learn Together</a></li>
-            <li><a href="#" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} flex items-center`}>
-              Help <span role="img" aria-label="praying hands" className="ml-1">🙏</span>
+            <li><a href="/help-me" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} flex items-center`}>
+              Help me<span role="img" aria-label="praying hands" className="ml-1">🙏</span>
             </a></li>
           </ul>
           <ul className="flex items-center space-x-4 ml-6">
-            <li><a href="#" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} hover:text-blue-500`}>Login</a></li>
-            <li><a href="#" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} hover:text-blue-500`}>Register</a></li>
+            <li><a href="/login" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} hover:text-blue-500`}>Login</a></li>
+            <li><a href="/register" className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} hover:text-blue-500`}>Register</a></li>
             {/* Toggle Theme Button */}
             <li>
               <button onClick={toggleTheme} className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} hover:text-blue-500 text-2xl`}>
