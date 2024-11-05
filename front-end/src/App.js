@@ -10,6 +10,7 @@ import Register from "./Pages/Register";
 import AllExercises from "./Pages/AllExercises";
 import TopUsers from "./Pages/TopUsers";
 import Help from "./Pages/Help";
+import { AuthProvider } from './ContextAPI/authContext';
 
 const App = () => {
   const [theme, setTheme] = useState("light"); // default to 'light'
@@ -33,6 +34,7 @@ const App = () => {
   };
 
   return (
+    <AuthProvider>
     <Router>
       <div
         className={`${theme === "dark" ? "bg-gray-900 text-white" : "bg-white text-black"
@@ -57,6 +59,7 @@ const App = () => {
         <Footer theme={theme} />
       </div>
     </Router>
+    </AuthProvider>
   );
 };
 
