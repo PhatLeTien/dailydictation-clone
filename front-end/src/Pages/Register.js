@@ -9,7 +9,7 @@ const Register = ({ theme }) => {
         theme === "dark" ? "bg-gray-900 text-gray-400" : "bg-white text-black"
       }`}
     >
-      <div className="max-w-xl w-full h-max border rounded-md mt-5 mb-10 p-4">
+      <div className="max-w-xl w-full h-max border rounded-md mt-40 mb-10 p-4">
         <h1 className="text-3xl font-semibold mb-5">Create an account</h1>
         <button className="ml-2 bg-white border px-3 py-2 rounded font-medium text-sm text-gray-700 flex gap-2 items-center">
           <FcGoogle size={24} />
