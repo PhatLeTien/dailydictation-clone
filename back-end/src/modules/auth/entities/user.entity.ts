@@ -27,6 +27,9 @@ export class User {
     @Column()
     refresh_token: string;
 
+    @Column({ nullable: true })
+    googleId?: string;
+
     @CreateDateColumn({ type: 'timestamp' })
     createdAt: Date;
 

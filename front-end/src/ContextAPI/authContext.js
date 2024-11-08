@@ -4,20 +4,20 @@ import requestApi from '../helpers/api';
 // Tạo AuthContext
 export const AuthContext = createContext();
 
-// Hàm lưu token vào localStorage
+// Hàm lưu token vào sessionStorage
 export const setTokens = (access_token, refresh_token) => {
-    localStorage.setItem('AccessToken', access_token);
-    localStorage.setItem('RefreshToken', refresh_token);
+    sessionStorage.setItem('AccessToken', access_token);
+    sessionStorage.setItem('RefreshToken', refresh_token);
 };
 
-// Hàm lấy token từ localStorage
-export const fetchAccessToken = () => localStorage.getItem('AccessToken');
-export const fetchRefreshToken = () => localStorage.getItem('RefreshToken');
+// Hàm lấy token từ sessionStorage
+export const fetchAccessToken = () => sessionStorage.getItem('AccessToken');
+export const fetchRefreshToken = () => sessionStorage.getItem('RefreshToken');
 
-// Hàm xóa token khỏi localStorage khi đăng xuất
+// Hàm xóa token khỏi sessionStorage khi đăng xuất
 export const clearTokens = () => {
-    localStorage.removeItem('AccessToken');
-    localStorage.removeItem('RefreshToken');
+    sessionStorage.removeItem('AccessToken');
+    sessionStorage.removeItem('RefreshToken');
 };
 
 // Hàm giải mã token
@@ -46,67 +46,94 @@ export const useAuth = () => {
 // AuthProvider component
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+     // Thêm hàm để lấy token từ URL
+     const getTokenFromUrl = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        if (token) {
+            // Xóa token khỏi URL để bảo mật
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        return token;
+    };
+
+
+    const handleGoogleLoginSuccess = async () => {
+        try {
+            // Thứ tự ưu tiên: 
+            // 1. Token từ URL (khi mới đăng nhập)
+            // 2. Token từ localStorage (nếu đã lưu trước đó)
+            const urlToken = getTokenFromUrl();
+            const storedToken = fetchAccessToken();
+            const token = urlToken || storedToken;
+
+            if (token) {
+                const decodedUser = decodeToken(token);
+                if (decodedUser) {
+                    // Nếu là token mới từ URL, lưu vào localStorage
+                    if (urlToken) {
+                        setTokens(urlToken, ''); // Không có refresh token trong trường hợp Google login
+                    }
+                    setUser(decodedUser);
+                    console.log("User logged in:", decodedUser);
+                }
+            }
+        } catch (error) {
+            console.error('Google login error:', error);
+            clearTokens();
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     const login = async (email, password) => {
         const loginData = { email, password }; // Dữ liệu đăng nhập
-
+    
         try {
             const res = await requestApi('/auth/login', 'POST', loginData);
             if (res.data.access_token && res.data.refresh_token) {
                 const { access_token, refresh_token } = res.data;
                 setTokens(access_token, refresh_token);
-
+    
                 const user = decodeToken(access_token);
                 setUser(user);
             } else {
-                throw new Error('Login failed: no tokens returned');
+                // Nếu không có token, ném lỗi
+                return { success: false, message: 'Login failed: no tokens returned' };
             }
         } catch (error) {
             console.error('Login error:', error);
-            throw new Error('Login failed: ' + error.message); // Ghi lại thông báo lỗi
+            return { success: false, message: 'Email hoặc mật khẩu không chính xác' };
         }
+    
+        return { success: true }; // Trả về thành công nếu không có lỗi
     };
 
-    // Hàm refresh token
-    const refreshToken = async () => {
-        const refresh_token = fetchRefreshToken();
-        if (refresh_token) {
-            try {
-                const res = await requestApi('/auth/refresh-token', 'POST', { refresh_token });
-                const { access_token, refresh_token: newRefreshToken } = res.data;
-                setTokens(access_token, newRefreshToken);
-
-                const user = decodeToken(access_token);
-                setUser(user);
-            } catch (error) {
-                console.error('Refresh token error:', error);
-                logout(); // Đăng xuất nếu refresh token không hợp lệ
-            }
-        }
-    };
-
-    // Hàm logout
     const logout = () => {
         clearTokens();
         setUser(null);
     };
 
-    // Kiểm tra token trong localStorage khi component được mount
+
+    useEffect(() => {
+        handleGoogleLoginSuccess();
+    }, []);
+
     useEffect(() => {
         const access_token = fetchAccessToken();
         if (access_token) {
             const user = decodeToken(access_token);
             setUser(user);
-
-            const expirationTime = user.exp * 1000 - Date.now() - 60000; // refresh trước 1 phút
-            const timeout = setTimeout(refreshToken, expirationTime);
-            
-            return () => clearTimeout(timeout); // Xóa timeout khi unmount
+        } else {
+            setUser(null); // Nếu không có token thì set user null
         }
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, setUser, login, logout, refreshToken }}>
+        <AuthContext.Provider value={{ user, setUser, login, logout, handleGoogleLoginSuccess,loading }}>
             {children}
         </AuthContext.Provider>
     );

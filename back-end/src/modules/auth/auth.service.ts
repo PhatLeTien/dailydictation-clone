@@ -6,7 +6,8 @@ import { InjectRepository } from '@nestjs/typeorm'; // Import InjectRepository t
 import * as bcrypt from 'bcrypt'; // Import bcrypt để mã hóa mật khẩu người dùng
 import { RegisterUserDTO } from './dto/register-user.dto'; // Import RegisterUserDTO để định dạng và xác thực dữ liệu đầu vào
 import { LoginUserDTO } from './dto/login-user.dto';
-import { JwtService } from '@nestjs/jwt'
+import { JwtService } from '@nestjs/jwt';
+import { GoogleUserDTO } from './dto/google.dto';
 
 
 // Đánh dấu class là một service có thể được chèn vào các phần khác của ứng dụng
@@ -111,4 +112,40 @@ export class AuthService {
             throw new HttpException('Refresh token is not valid', HttpStatus.BAD_REQUEST);
         }
     }
+
+     // Hàm đăng nhập với Google
+  async googleLogin(googleUserData: GoogleUserDTO): Promise<any> {
+    try {
+      // Kiểm tra người dùng đã tồn tại trong cơ sở dữ liệu chưa
+      let user = await this.userRepository.findOne({
+        where: [
+          { googleId: googleUserData.googleId },
+          { email: googleUserData.email }
+        ],
+        relations: ['role'],
+      });
+
+      if (!user) {
+        // Tạo người dùng mới nếu chưa có
+        user = await this.userRepository.save({
+          username: googleUserData.username,
+          email: googleUserData.email,
+          googleId: googleUserData.googleId,
+          password: await this.hashPassword(Math.random().toString(36)), // Mật khẩu ngẫu nhiên cho người dùng Google
+          refresh_token: "",
+          role: { id: 2 }, // Vai trò mặc định cho người dùng Google
+        });
+       
+      }
+
+      // Tạo token cho người dùng
+      const roleIds = user.role ? [user.role.id] : [];
+      const payload = { id: user.id, username: user.username, email: user.email, roleIds};
+      return this.generateToken(payload);
+    } catch (error) {
+      throw new Error('Google authentication failed');
+    }
+  }
+    
+
 }
