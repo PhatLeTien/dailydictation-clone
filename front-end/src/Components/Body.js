@@ -1,13 +1,30 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';  // Import useNavigate
 import { Headphones, Keyboard, CheckCircle, Volume2 } from 'lucide-react';
 
 const Body = ({ theme }) => {
+
+  const navigate = useNavigate(); // Khai báo useNavigate hook
+
   const challenges = [
     { title: '7-Day BBC 6-Minute English', description: 'A challenge featuring BBC’s popular series. Practice with daily videos to enhance listening skills.', days: 7 },
     { title: '5-Day TOEFL Listening', description: 'A series of TOEFL listening exercises, helping you improve academic listening in just 5 days.', days: 5 },
     { title: '10-Day IELTS Prep', description: 'This challenge focuses on IELTS listening exercises to improve academic comprehension and real-world English.', days: 10 },
     { title: '3-Day Daily Conversations', description: 'Short, simple videos of daily conversations to practice listening to native speakers in everyday scenarios.', days: 3 },
   ];
+
+  const handleChallengeClick = (challengeTitle) => {
+    // Điều hướng đến chi tiết challenge, ví dụ: "/detail7day"
+    if (challengeTitle === '7-Day BBC 6-Minute English') {
+      navigate('/detail7day');
+    } else if (challengeTitle === '5-Day TOEFL Listening') {
+      navigate('/detail5day');
+    } else if (challengeTitle === '10-Day IELTS Prep') {
+      navigate('/detail10day');
+    } else if (challengeTitle === '3-Day Daily Conversations') {
+      navigate('/detail3day');
+    }
+  };
 
   return (
     <main className={`container mx-auto px-4 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-black'} min-h-screen`}>
@@ -68,25 +85,44 @@ const Body = ({ theme }) => {
         <div className="grid grid-cols-2 gap-8">
           {challenges.map((challenge, index) => (
             <div key={index} className="border p-4 rounded">
-              <h3 className="font-medium mb-2 text-[#6ea8fe] underline text-[1.75rem]">{challenge.title}</h3>
+              <h3 className="font-medium mb-2 text-[#6ea8fe] underline text-[1.75rem]">
+                <button
+                  onClick={() => handleChallengeClick(challenge.title)} // Sử dụng onClick để điều hướng
+                  className="text-[#6ea8fe] underline"
+                >
+                  {challenge.title}
+                </button></h3>
               <p className="mb-4 text-gray-600">{challenge.description}</p>
 
               <ul className="list-disc list-inside mb-4">
                 {Array.from({ length: challenge.days }).map((_, dayIndex) => (
                   <li key={dayIndex}>
-                    <a href="#" className="text-[#6ea8fe] underline font-medium">Day {dayIndex + 1} - Video</a>
+                    <button
+                      onClick={() => handleChallengeClick(challenge.title)}
+                      className="text-[#6ea8fe] underline font-medium"
+                    >
+                      Day {dayIndex + 1} - Video
+                    </button>
                   </li>
                 ))}
               </ul>
-              <a href="#" className="text-[#6ea8fe] underline">View all videos</a>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleChallengeClick(challenge.title);
+                }}
+                className="text-[#6ea8fe] underline"
+              >
+                View all videos
+              </button>
             </div>
           ))}
         </div>
       </section>
 
       <div className="w-full mx-auto border-t border-gray-300 mt-20 mb-20"></div>
-      
-      
+
+
       <section className="mb-20">
         <h2 className="text-[2rem] font-medium text-center mb-6">How participating in challenges will improve your English skills?</h2>
         <div className="grid grid-cols-2 gap-8">
@@ -115,7 +151,7 @@ const Body = ({ theme }) => {
             <div>
               <h3 className="font-medium mb-2 text-[1.75rem]">Will my speaking skills improve using this method?</h3>
               <p>Speaking and listening skills are related together, once you have better listening skills, it's much easier and faster to improve your speaking skills.
-              Also, you can try to read out loud what you hear, your skills will improve really quickly!</p>
+                Also, you can try to read out loud what you hear, your skills will improve really quickly!</p>
             </div>
           </div>
         </div>
