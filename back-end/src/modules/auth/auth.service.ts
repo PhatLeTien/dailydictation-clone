@@ -30,18 +30,14 @@ export class AuthService {
         const roleId = registerUserDTO.roleId || 2;
 
         // Tìm vai trò theo ID
-        const role = await this.roleRepository.findOne({ where: { id: roleId } });
-        if (!role) {
-            throw new HttpException('Invalid role ID', HttpStatus.BAD_REQUEST);
-        }
-
+   
         // Lưu thông tin người dùng vào database, bao gồm mật khẩu đã mã hóa và refresh_token
         return await this.userRepository.save({
             ...registerUserDTO,
             username: registerUserDTO.username,// Sao chép tất cả các thuộc tính từ RegisterUserDTO
             refresh_token: "reresasdasd", // Thêm refresh_token (có thể là một giá trị ngẫu nhiên hoặc cố định)
             password: hashPassword, // Thay thế mật khẩu bằng mật khẩu đã mã hóa
-            role: role,
+            roleId,
         });
     }
     // Phương thức private để mã hóa mật khẩu bằng bcrypt

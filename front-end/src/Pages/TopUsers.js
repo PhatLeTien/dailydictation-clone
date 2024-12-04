@@ -12,7 +12,7 @@ const users = [
 const TopUsers = ({ theme }) => {
   return (
     <div
-      className={`w-full min-h-screen flex justify-center ${
+      className={`w-full min-h-screen flex justify-center mt-40 ${
         theme === "dark" ? "bg-gray-900 text-gray-400" : "bg-white text-black"
       }`}
     >

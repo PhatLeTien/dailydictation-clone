@@ -1,6 +1,6 @@
 import { FcGoogle } from "react-icons/fc";
 import { Link } from "react-router-dom";
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import requestApi from '../helpers/api';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,7 +8,7 @@ const Register = ({ theme }) => {
   const navigate = useNavigate();
   const [signupData, setSignupData] = useState({ username: '', email: '', password: '' });
   const [formErrors, setFormErrors] = useState({});
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Trạng thái gửi form
 
   // Hàm onchange
   const onChange = (event) => {
@@ -22,7 +22,7 @@ const Register = ({ theme }) => {
   // Hàm submit
   const onSubmit = (event) => {
     event.preventDefault(); // Ngăn chặn hành vi submit mặc định
-    setIsSubmitted(true); // Đánh dấu là đã submit
+    setIsSubmitting(true); // Đánh dấu là đang gửi form
 
     const valid = validateForm();
     if (valid) {
@@ -34,8 +34,10 @@ const Register = ({ theme }) => {
         })
         .catch((err) => {
           console.error(err);
-          // Có thể thêm thông báo lỗi cho người dùng ở đây
+          setIsSubmitting(false); // Đặt lại trạng thái khi có lỗi
         });
+    } else {
+      setIsSubmitting(false); // Đặt lại trạng thái nếu form không hợp lệ
     }
   };
 
@@ -114,8 +116,11 @@ const Register = ({ theme }) => {
             />
             {formErrors.password && <p className="text-red-500 text-sm">{formErrors.password}</p>}
           </div>
-          <button className="px-3 py-2 text-white rounded-md bg-green-700 hover:bg-green-800 transition-all duration-300">
-            Submit
+          <button 
+            className="px-3 py-2 text-white rounded-md bg-green-700 hover:bg-green-800 transition-all duration-300"
+            disabled={isSubmitting} // Disable button while submitting
+          >
+            {isSubmitting ? 'Đang gửi...' : 'Submit'}
           </button>
         </form>
 
