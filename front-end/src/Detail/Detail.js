@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight, FaRedo } from "react-icons/fa";
 import requestApi from '../helpers/api';
 
 const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
@@ -15,6 +16,33 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
   const intervalRef = useRef(null);
   const [isStarted, setIsStarted] = useState(false);
   const [currentCaptionIndex, setCurrentCaptionIndex] = useState(0);
+  const { videoId } = useParams();
+  const [video, setVideo] = useState(null);
+
+
+  useEffect(() => {
+    const fetchVideo = async () => {
+      try {
+        const response = await requestApi(`/videos/getVideo/${videoId}`, 'GET');
+        if (response.status !== 200) {
+          throw new Error('Video not found');
+        }
+        const videoData = response.data;
+        setVideo(videoData);
+
+        // Lấy đường dẫn transcript và gọi hàm fetchAndParseVTT
+        if (videoData.transcript_path) {
+          fetchAndParseVTT(videoData.transcript_path);
+        }
+      } catch (err) {
+        console.error('Error fetching video:', err);
+      }
+    };
+
+    fetchVideo();
+  }, [videoId]);
+
+
 
   const timeToSeconds = (timeString) => {
     const [hours, minutes, seconds] = timeString.split(":");
@@ -40,68 +68,69 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
       }
 
       setTranscript(transcriptData);
-      console.log('Transcripts:', transcriptData);
     } catch (error) {
       console.error("Error fetching VTT file:", error);
     }
   };
 
   useEffect(() => {
-    const loadYouTubeAPI = () => {
-      if (!window.YT) {
-        const script = document.createElement("script");
-        script.src = "https://www.youtube.com/iframe_api";
-        document.body.appendChild(script);
-      }
-
-      window.onYouTubeIframeAPIReady = initializePlayer;
-    };
-
-    const initializePlayer = () => {
-      const videoId = new URL(videoUrl).searchParams.get("v");
-      playerRef.current = new window.YT.Player(videoRef.current, {
-        videoId,
-        events: {
-          onReady: onPlayerReady,
-          onStateChange: onPlayerStateChange
+    if (video) {
+      const loadYouTubeAPI = () => {
+        if (!window.YT) {
+          const script = document.createElement("script");
+          script.src = "https://www.youtube.com/iframe_api";
+          document.body.appendChild(script);
         }
-      });
-    };
 
-    const onPlayerReady = () => {
-      console.log("YouTube Player is ready");
-    };
+        window.onYouTubeIframeAPIReady = initializePlayer;
+      };
 
-    const onPlayerStateChange = (event) => {
-      if (event.data === window.YT.PlayerState.PLAYING) {
-        intervalRef.current = setInterval(() => {
-          const currentVideoTime = playerRef.current.getCurrentTime();
-          setCurrentTime(currentVideoTime);
-        }, 100);
-      } else if (event.data === window.YT.PlayerState.PAUSED || event.data === window.YT.PlayerState.ENDED) {
-        clearInterval(intervalRef.current);
+      const initializePlayer = () => {
+        const videoId = new URL(video.url).searchParams.get("v");
+        playerRef.current = new window.YT.Player(videoRef.current, {
+          videoId,
+          events: {
+            onReady: onPlayerReady,
+            onStateChange: onPlayerStateChange,
+          },
+        });
+      };
+
+      const onPlayerReady = () => {
+        console.log("YouTube Player is ready");
+      };
+
+      const onPlayerStateChange = (event) => {
+        if (event.data === window.YT.PlayerState.PLAYING) {
+          intervalRef.current = setInterval(() => {
+            const currentVideoTime = playerRef.current.getCurrentTime();
+            setCurrentTime(currentVideoTime);
+          }, 100);
+        } else if (event.data === window.YT.PlayerState.PAUSED || event.data === window.YT.PlayerState.ENDED) {
+          clearInterval(intervalRef.current);
+        }
+      };
+
+      loadYouTubeAPI();
+
+      if (video.transcript_path) {
+        fetchAndParseVTT(video.transcript_path);
       }
-    };
 
-    loadYouTubeAPI();
-
-    if (transcriptFile) {
-      fetchAndParseVTT(transcriptFile);
+      return () => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        window.onYouTubeIframeAPIReady = null;
+      };
     }
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      window.onYouTubeIframeAPIReady = null;
-    };
-  }, [videoUrl, transcriptFile]);
+  }, [video]);
 
   useEffect(() => {
     if (playerRef.current && transcript.length > 0 && isStarted) {
       const currentCaption = transcript[currentCaptionIndex];
       if (currentTime >= currentCaption.startTime && currentTime <= currentCaption.endTime) {
-       
-          setCurrentCaption(currentCaption);
-        
+
+        setCurrentCaption(currentCaption);
+
         if (currentTime >= currentCaption.endTime - 0.2) {
           playerRef.current.pauseVideo();
           setCompletedCount(currentCaptionIndex + 1);
@@ -113,8 +142,9 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
 
   const checkSpelling = () => {
     if (currentCaption) {
-      const input = inputText.trim().toLowerCase();
-      const caption = currentCaption.captionText.toLowerCase();
+      const input = inputText.trim().toLowerCase().replace(/\s+/g, ' '); // Xử lý khoảng trắng thừa
+      const caption = currentCaption.captionText.trim().toLowerCase().replace(/\s+/g, ' ');
+
       if (input === caption) {
         setFeedbackMessage("Correct! Well done.");
       } else {
@@ -123,10 +153,11 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
     }
   };
 
+
   const handleContinue = () => {
-    if (playerRef.current) {
-      playerRef.current.playVideo();
-      setCurrentCaption(null);
+    if (currentCaption) {
+      setInputText(currentCaption.captionText); // Điền nội dung vào ô input
+
     }
   };
 
@@ -169,7 +200,38 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
       <button onClick={onBack} className="mb-4 bg-gray-300 px-2 py-1 rounded">
         Quay lại
       </button>
-      <h2 className="text-2xl font-semibold mb-4">{title}</h2>
+      <div className="flex justify-between items-center mb-4">
+        {/* Tiêu đề */}
+        <h2 className="text-2xl font-semibold">{video?.title}</h2>
+
+        {/* Điều khiển */}
+        {isStarted && (
+          <div className="flex items-center gap-2">
+            {/* Replay */}
+            <FaRedo
+              className="cursor-pointer text-blue-500"
+              title="Replay"
+            />
+            {/* Current Caption */}
+            <span className="min-w-[50px] text-center">
+              {currentCaptionIndex + 1} / {transcript.length}
+            </span>
+            {/* Previous */}
+            <FaArrowLeft
+              className={`cursor-pointer ${currentCaptionIndex === 0 ? "text-gray-400 cursor-not-allowed" : "text-blue-500"}`}
+              title="Previous"
+              onClick={handlePrevCaption}
+            />
+            {/* Next */}
+            <FaArrowRight
+              className={`cursor-pointer ${currentCaptionIndex === transcript.length - 1 ? "text-gray-400 cursor-not-allowed" : "text-blue-500"}`}
+              title="Next"
+              onClick={handleNextCaption}
+            />
+          </div>
+        )}
+
+      </div>
 
       <div className="border rounded mb-4 overflow-hidden shadow">
         <div ref={videoRef} className="video-player" style={{ width: "100%", height: "315px" }} />
@@ -186,21 +248,27 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
             )}
           </div>
 
-          <div className="flex gap-2 mb-4">
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Type what you hear..."
-              className="border rounded w-full px-2 py-1"
-            />
-            <button onClick={checkSpelling} className="bg-blue-500 text-white px-4 py-1 rounded">
-              Check
-            </button>
-            <button onClick={handleContinue} className="border px-4 py-1 rounded">
-              Continue
-            </button>
+          <div className="flex flex-col items-center gap-4 mb-4">
+            {/* Input Text */}
+            <textarea
+  value={inputText}
+  onChange={(e) => setInputText(e.target.value)}
+  placeholder="Type what you hear..."
+  className="border rounded w-full max-w-md px-4 py-3 text-lg h-32 resize-none"
+/>
+
+
+            {/* Buttons */}
+            <div className="flex gap-4">
+              <button onClick={checkSpelling} className="bg-blue-500 text-white px-6 py-2 rounded">
+                Check
+              </button>
+              <button onClick={handleContinue} className="border px-6 py-2 rounded">
+                Skip
+              </button>
+            </div>
           </div>
+
 
           {/* Hiển thị phản hồi chính tả */}
           {feedbackMessage && (
@@ -210,25 +278,16 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
           )}
 
 
-          {/* Hiển thị mức độ hoàn thành */}
-          <div className="mt-4 text-center flex items-center justify-center gap-4">
-            <button
-              disabled={currentCaptionIndex === 0}
-              onClick={handlePrevCaption}
-              className={`px-3 py-1 rounded bg-gray-300 ${currentCaptionIndex === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              <FaChevronLeft />
-            </button>
-            <span>
-              {currentCaptionIndex + 1} / {transcript.length}
-            </span>
-            <button
-              disabled={currentCaptionIndex === transcript.length - 1}
-              onClick={handleNextCaption}
-              className={`px-3 py-1 rounded bg-gray-300 ${currentCaptionIndex === transcript.length - 1 ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              <FaChevronRight />
-            </button>
+          <div className="flex justify-between items-center">
+            <div>
+              <label htmlFor="videoSize" className="mr-2 text-sm">Video size:</label>
+              <select id="videoSize" className="border rounded px-2 py-1">
+                <option value="large">Large</option>
+                <option value="medium">Medium</option>
+                <option value="small">Small</option>
+              </select>
+            </div>
+            <button className="px-4 py-1 border rounded">Hide video</button>
           </div>
 
 

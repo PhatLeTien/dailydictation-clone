@@ -29,5 +29,16 @@ export class VideosController {
     }
 
  
+    // Route để crawl 1 video cụ thể và lấy transcript
+  @Post('crawl-single-video')
+  async crawlSingleVideo(@Body('videoUrl') videoUrl: string): Promise<string> {
+    try {
+      const message = await this.videosService.crawlSingleVideo(videoUrl);
+      return message;
+    } catch (error) {
+      console.error('Lỗi khi crawl video:', error);
+      throw new Error('Không thể crawl video từ URL cung cấp.');
+    }
+  }
  
 }

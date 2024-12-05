@@ -4,7 +4,7 @@ export class CreateVideoDto {
     url?: string;
     thumbnail: string;
     description?: string;
-    mp3_file_path?: string;
+    transcript_path?: string;
 }
 export class CreateTranscriptDto {
     videoId: string;

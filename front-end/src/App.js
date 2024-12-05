@@ -10,12 +10,22 @@ import Register from "./Pages/Register";
 import AllExercises from "./Pages/AllExercises";
 import TopUsers from "./Pages/TopUsers";
 import Help from "./Components/Helpme";
+
 import PronunciationComponent from "./Pages/english-pronunciation";
 
 import VideoList from "./Detail/VideoList";
 import DetailView from "./Detail/Detail";
 
+
 import { AuthProvider } from './ContextAPI/authContext';
+
+
+import AdminLayout from './Admin/Components/AdminLayout';
+import Dashboard from './Admin/Pages/Dashboard';
+import Lessons from './Admin/Pages/Lessons';
+import Statistics from './Admin/Pages/Statistics';
+import Settings from './Admin/Pages/Settings';
+import NotFound from './Admin/Pages/NotFound';
 
 const App = () => {
   const [theme, setTheme] = useState("light"); // default to 'light'
@@ -40,8 +50,11 @@ const App = () => {
   return (
     <AuthProvider>
       <Router>
-        <div className={`${theme === "dark" ? "bg-gray-900 text-white" : "bg-white text-black"} app-container`}>
-          <Header theme={theme} toggleTheme={toggleTheme} />
+      <div className={`${theme === "dark" ? "bg-gray-900 text-white" : "bg-white text-black"} app-container`}>
+            {/* Chỉ hiển thị Header và Footer khi không phải route admin */}
+            {!window.location.pathname.startsWith('/admin') && (
+            <Header theme={theme} toggleTheme={toggleTheme} />
+          )}
           <div className="content">
             <Routes>
               <Route path="/" element={<Body theme={theme} />} />
@@ -49,19 +62,32 @@ const App = () => {
               <Route path="/top-users" element={<TopUsers theme={theme} />} />
               <Route path="/learntogether" element={<LearnTogether theme={theme} />} />
               <Route path="/support-dailydictation" element={<Help theme={theme} />} />
+             
+
               <Route path="/challenge/:slug" element={<VideoList />} />
 
               <Route path="/video/:videoId" element={<DetailView />} />
               <Route path="/login" element={<Login theme={theme} />} />
               <Route path="/register" element={<Register theme={theme} />} />
               <Route path="/english-pronunciation" element={<PronunciationComponent theme={theme} />} />
+
+                {/* Admin Routes */}
+                <Route path="/admin/*" element={<AdminLayout />}>
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="lessons" element={<Lessons />} />
+                <Route path="statistics" element={<Statistics />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
+            
             </Routes>
           </div>
           <Footer theme={theme} />
-        </div>
+          </div>
       </Router>
     </AuthProvider>
   );
 };
 
 export default App;
+
