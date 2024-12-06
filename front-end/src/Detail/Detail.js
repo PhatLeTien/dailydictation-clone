@@ -3,12 +3,17 @@ import { useParams } from "react-router-dom";
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { FaArrowLeft, FaArrowRight, FaRedo } from "react-icons/fa";
 import requestApi from '../helpers/api';
+import axios from "axios";
 
 const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
   const [transcript, setTranscript] = useState([]);
   const [inputText, setInputText] = useState("");
   const [currentCaption, setCurrentCaption] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [translatedText, setTranslatedText] = useState("");
+  const [targetLanguage, setTargetLanguage] = useState('vi');
+  const [showTranslation, setShowTranslation] = useState(false);
+  // Thêm state mới
   const [completedCount, setCompletedCount] = useState(0); // Đếm số câu đã hoàn thành
   const videoRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -18,6 +23,11 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
   const [currentCaptionIndex, setCurrentCaptionIndex] = useState(0);
   const { videoId } = useParams();
   const [video, setVideo] = useState(null);
+
+
+
+
+
 
 
   useEffect(() => {
@@ -146,20 +156,25 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
       const caption = currentCaption.captionText.trim().toLowerCase().replace(/\s+/g, ' ');
 
       if (input === caption) {
-        setFeedbackMessage("Correct! Well done.");
+        setFeedbackMessage("Correct");
       } else {
-        setFeedbackMessage(`Oops! The correct caption is: "${currentCaption.captionText}"`);
+        setFeedbackMessage("Incorrect");
       }
     }
   };
 
 
-  const handleContinue = () => {
-    if (currentCaption) {
-      setInputText(currentCaption.captionText); // Điền nội dung vào ô input
-
+  const handleContinue = async () => {
+    if (currentCaption && currentCaption.captionText) { // Kiểm tra captionText
+      setInputText(currentCaption.captionText);
+      setShowTranslation(true); // Hiển thị phần dịch khi bấm skip
+  
+      // // Dịch câu trả lời (captionText) nếu cần
+      // const translatedText = await fetchTranslation(currentCaption.captionText, targetLanguage); // Dịch theo ngôn ngữ đích
+      // setTranslatedText(translatedText); // Lưu kết quả dịch vào state
     }
   };
+  
 
   const handleStartDictation = () => {
     setIsStarted(true);
@@ -174,6 +189,8 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
   const handlePrevCaption = () => {
     if (currentCaptionIndex > 0) {
       setCurrentCaptionIndex(currentCaptionIndex - 1);
+      setInputText(""); // Reset input
+      setFeedbackMessage(null); // Xóa thông báo phản hồi
       const prevCaption = transcript[currentCaptionIndex - 1];
       if (playerRef.current) {
         playerRef.current.seekTo(prevCaption.startTime, true);
@@ -183,9 +200,10 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
   };
 
   const handleNextCaption = () => {
-
     if (currentCaptionIndex < transcript.length - 1) {
       setCurrentCaptionIndex(currentCaptionIndex + 1);
+      setInputText(""); // Reset input
+      setFeedbackMessage(null); // Xóa thông báo phản hồi
       const nextCaption = transcript[currentCaptionIndex + 1];
       if (playerRef.current) {
         playerRef.current.seekTo(nextCaption.startTime, true);
@@ -193,6 +211,7 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
       }
     }
   };
+
 
 
   return (
@@ -208,10 +227,7 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
         {isStarted && (
           <div className="flex items-center gap-2">
             {/* Replay */}
-            <FaRedo
-              className="cursor-pointer text-blue-500"
-              title="Replay"
-            />
+            <FaRedo className="cursor-pointer text-blue-500" title="Replay" />
             {/* Current Caption */}
             <span className="min-w-[50px] text-center">
               {currentCaptionIndex + 1} / {transcript.length}
@@ -230,7 +246,6 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
             />
           </div>
         )}
-
       </div>
 
       <div className="border rounded mb-4 overflow-hidden shadow">
@@ -239,24 +254,14 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
 
       {isStarted && (
         <>
-          <div className="mb-4">
-            {currentCaption && (
-              <div className="bg-gray-100 p-4 rounded">
-                <p className="font-bold mb-2">Current Caption:</p>
-                <p>{currentCaption.captionText}</p>
-              </div>
-            )}
-          </div>
-
           <div className="flex flex-col items-center gap-4 mb-4">
             {/* Input Text */}
             <textarea
-  value={inputText}
-  onChange={(e) => setInputText(e.target.value)}
-  placeholder="Type what you hear..."
-  className="border rounded w-full max-w-md px-4 py-3 text-lg h-32 resize-none"
-/>
-
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Type what you hear..."
+              className="border rounded w-full max-w-md px-4 py-3 text-lg h-28 resize-none"
+            />
 
             {/* Buttons */}
             <div className="flex gap-4">
@@ -269,12 +274,35 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
             </div>
           </div>
 
-
           {/* Hiển thị phản hồi chính tả */}
           {feedbackMessage && (
-            <div className={`mt-4 p-2 text-center rounded ${feedbackMessage.includes("Correct") ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
-              {feedbackMessage}
+            <div className={`mt-2 mb-2 text-center text-lg font-semibold ${feedbackMessage.includes("Correct") ? 'text-green-500' : 'text-red-500'}`}>
+              {feedbackMessage.includes("Correct") ? "✔ You are correct!" : "❗ Incorrect"}
             </div>
+          )}
+          {/* Hiển thị div phiên dịch khi người dùng bấm Skip */}
+          {showTranslation && (
+            <div className="mt-4 p-4 mb-4 border rounded shadow-lg bg-gray-100">
+              {/* Phần "Translation" và dropdown */}
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm text-gray-600">Translation</span>
+                <select
+                  className="border rounded px-2 py-1 text-sm"
+                  value={targetLanguage}
+                  onChange={(e) => setTargetLanguage(e.target.value)}
+                >
+                  <option value="en">English</option>
+                  <option value="vi">Vietnamese</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                  {/* Thêm các ngôn ngữ khác nếu cần */}
+                </select>
+              </div>
+
+              {/* Nội dung phiên dịch */}
+              <p className="text-lg mt-2">{translatedText || 'Đây là phần phiên dịch cho đoạn văn mà bạn đang nghe...'}</p>
+            </div>
+
           )}
 
 
@@ -289,8 +317,6 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
             </div>
             <button className="px-4 py-1 border rounded">Hide video</button>
           </div>
-
-
         </>
       )}
 
@@ -300,6 +326,8 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
         </button>
       )}
     </div>
+
+ 
   );
 };
 

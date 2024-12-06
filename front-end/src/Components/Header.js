@@ -173,16 +173,61 @@ const Header = ({ theme, toggleTheme }) => {
                         }`}
                         onClick={() => setIsUserDropdownOpen(false)}
                       >
-                        Profile
+                        Public Profile
                       </Link>
                       <Link
-                        to="/settings"
+                        to="/account-information"
                         className={`block px-4 py-2 ${
                           theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"
                         }`}
                         onClick={() => setIsUserDropdownOpen(false)}
                       >
-                        Settings
+                        Account Information
+                      </Link>
+                      <Link
+                        to="/notifications"
+                        className={`block px-4 py-2 ${
+                          theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                        }`}
+                        onClick={() => setIsUserDropdownOpen(false)}
+                      >
+                        Notifications
+                      </Link>
+                      <Link
+                        to="/comments"
+                        className={`block px-4 py-2 ${
+                          theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                        }`}
+                        onClick={() => setIsUserDropdownOpen(false)}
+                      >
+                        Comments
+                      </Link>
+                      <Link
+                        to="/favorite-lessons"
+                        className={`block px-4 py-2 ${
+                          theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                        }`}
+                        onClick={() => setIsUserDropdownOpen(false)}
+                      >
+                        Favorite lessons
+                      </Link>
+                      <Link
+                        to="/change-password"
+                        className={`block px-4 py-2 ${
+                          theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                        }`}
+                        onClick={() => setIsUserDropdownOpen(false)}
+                      >
+                        Change password
+                      </Link>
+                      <Link
+                        to="/change-email"
+                        className={`block px-4 py-2 ${
+                          theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                        }`}
+                        onClick={() => setIsUserDropdownOpen(false)}
+                      >
+                        Change email
                       </Link>
                       <button
                         onClick={handleLogout}

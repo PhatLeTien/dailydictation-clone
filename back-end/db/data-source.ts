@@ -6,7 +6,7 @@ export const dataSourceOptions:DataSourceOptions = {
     port: 3306,
     username: 'root', // Thay đổi nếu bạn có username khác
     password: '', // Thay đổi nếu bạn có mật khẩu cho MySQL
-    database: 'tttn', // Tên database bạn muốn kết nối
+    database: 'tttn1', // Tên database bạn muốn kết nối
     entities: ['dist/**/*.entity{.ts,.js}'],
     migrations: ['dist/db/migrations/*.js'],
     synchronize: false,

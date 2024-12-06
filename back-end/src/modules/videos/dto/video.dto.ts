@@ -5,6 +5,7 @@ export class CreateVideoDto {
     thumbnail: string;
     description?: string;
     transcript_path?: string;
+    
 }
 export class CreateTranscriptDto {
     videoId: string;

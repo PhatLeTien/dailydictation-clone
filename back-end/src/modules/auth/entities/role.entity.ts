@@ -7,7 +7,7 @@ import {
     OneToMany,
     BaseEntity,
 } from 'typeorm';
-import { User } from '../entities/user.entity'; // Chỉnh sửa đường dẫn nếu cần
+import { User } from '../entities/user.entity'; 
 
 @Entity('roles')
 export class Role extends BaseEntity {

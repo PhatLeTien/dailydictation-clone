@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Challenge } from '../../challenge/entities/challenge.entity';
+import { Comment } from 'src/modules/comment/entities/comment.entity';
 
 
 @Entity('videos')
@@ -25,6 +26,11 @@ export class Video {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+    // Liên kết với Comment (các bình luận thuộc video này)
+    @OneToMany(() => Comment, (comment) => comment.video)
+    comments: Comment[];
+  
 
  
 }

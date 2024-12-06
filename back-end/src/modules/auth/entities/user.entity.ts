@@ -1,5 +1,4 @@
 // src/modules/users/entities/user.entity.ts
-
 import {
     Entity,
     PrimaryGeneratedColumn,
@@ -7,8 +6,10 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     ManyToOne,
+    OneToMany
 } from 'typeorm';
-import { Role } from '../entities/role.entity'; // Chỉnh sửa đường dẫn nếu cần
+import { Role } from '../entities/role.entity';
+import { Comment } from 'src/modules/comment/entities/comment.entity'; // Chỉnh sửa đường dẫn nếu cần
 
 @Entity('users')
 export class User {
@@ -39,4 +40,8 @@ export class User {
     // Many-to-One relation with Role
     @ManyToOne(() => Role, (role) => role.users)
     role: Role; // Thay đổi từ 'roles' sang 'role'
+
+     // Liên kết với Comment (các bình luận mà người dùng viết)
+     @OneToMany(() => Comment, (comment) => comment.user)
+     comments: Comment[];
 }
