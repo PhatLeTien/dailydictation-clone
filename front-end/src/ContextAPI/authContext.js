@@ -132,8 +132,12 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    const updateUserInfo = (newUserInfo) => {
+        setUser(newUserInfo);
+      };
+
     return (
-        <AuthContext.Provider value={{ user, setUser, login, logout, handleGoogleLoginSuccess,loading }}>
+        <AuthContext.Provider value={{ user, setUser, login, logout, handleGoogleLoginSuccess,updateUserInfo , loading }}>
             {children}
         </AuthContext.Provider>
     );

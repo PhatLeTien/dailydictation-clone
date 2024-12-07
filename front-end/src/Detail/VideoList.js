@@ -1,19 +1,20 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useParams, useLocation, Link } from "react-router-dom";
-import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import { useLocation, Link } from "react-router-dom";
+import { FaStar } from "react-icons/fa";
 import requestApi from '../helpers/api';
 import DetailView from "./Detail";
+import { useAuth } from '../ContextAPI/authContext';
 
 const DetailDay = () => {
   // Lấy query string từ URL
   const [videos, setVideos] = useState([]);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [userProgress, setUserProgress] = useState({}); // Lưu tiến trình học của người dùng
   const location = useLocation();
   const challengeId = location.state?.challengeId;
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("No filter");
-  const [selectedItem, setSelectedItem] = useState(null);
-  // Lấy id từ query string
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -28,13 +29,37 @@ const DetailDay = () => {
     fetchVideos();
   }, [challengeId]);
 
-  const handleVideoClick = (video) => setSelectedVideo(video);
-  const handleBack = () => setSelectedVideo(null);
+  useEffect(() => {
+    // Fetch tiến trình học của người dùng cho mỗi video
+    const fetchProgress = async (videoId) => {
+      try {
+        const response = await requestApi(`/user_process/${user.id}/${videoId}`, 'GET');
+        if (response.data) {
+          setUserProgress((prev) => ({
+            ...prev,
+            [videoId]: response.data.completionPercentage, // Lưu tỷ lệ hoàn thành của video
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching user progress:', error);
+      }
+    };
+
+    // Lặp qua danh sách video và lấy tiến trình cho mỗi video
+    videos.forEach((video) => {
+      fetchProgress(video.id);
+    });
+  }, [videos]);
+
+  const handleVideoClick = (video) => {
+    const progress = userProgress[video.id] || 0; // Lấy tiến trình từ userProgress, nếu không có thì mặc định là 0
+    setSelectedVideo({ ...video, progress });
+  };
   
+  const handleBack = () => setSelectedVideo(null);
+
   const handleSearchChange = (e) => setSearch(e.target.value);
   const handleFilterChange = (e) => setFilter(e.target.value);
-  const handleItemClick = (item) => setSelectedItem(item);
-
 
   return (
     <div className="p-5">
@@ -70,23 +95,36 @@ const DetailDay = () => {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3 mb-4">
-          {videos.map((video) => (
-            <div
-              key={video.id}
-              className="border p-2 rounded flex items-center gap-2 cursor-pointer"
-            >
-              <FaStar className="text-gray-400" />
-              {/* Sử dụng Link để điều hướng đến trang chi tiết video */}
-              <Link to={`/video/${video.id}`} className="text-[#6ea8fe]">
-                {video.title}
-              </Link>
-            </div>
-          ))}
-        </div>
-    </>
-  )
-}
-    </div >
+            {videos.map((video) => (
+              <div
+                key={video.id}
+                className="border p-2 rounded flex flex-col items-center gap-2 cursor-pointer"
+              >
+                <FaStar className="text-gray-400" />
+                {/* Liên kết đến trang chi tiết video */}
+                <Link to={`/video/${video.id}`} className="text-[#6ea8fe]" onClick={() => handleVideoClick(video)}>
+                  {video.title}
+                </Link>
+
+                {/* Hiển thị thanh tiến trình (progress bar) */}
+                {userProgress[video.id] !== undefined && (
+                  <div className="w-full mt-2">
+                    <div className="flex justify-between text-xs">
+                    </div>
+                    <div className="h-2 bg-gray-200 rounded-full">
+                      <div
+                        className="h-2 bg-blue-500 rounded-full"
+                        style={{ width: `${userProgress[video.id]}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 

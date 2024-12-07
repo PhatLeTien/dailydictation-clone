@@ -1,28 +1,23 @@
 import React, { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  TextField,
-  Button,
-  Box,
-  Typography,
-} from '@mui/material';
+import { Card, CardContent, CardHeader, TextField, Button, Box, Typography } from '@mui/material';
+import { useAuth } from '../ContextAPI/authContext';
+import requestApi from '../helpers/api';
 
 const ChangePassword = () => {
-  const [currentPassword, setCurrentPassword] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const { user } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
     // Validate passwords
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if (!oldPassword || !newPassword || !confirmPassword) {
       setError('Please fill in all fields.');
       return;
     }
@@ -30,17 +25,27 @@ const ChangePassword = () => {
       setError('New password and confirm password do not match.');
       return;
     }
-
     if (newPassword.length < 8) {
       setError('New password must be at least 8 characters long.');
       return;
     }
 
-    // Simulate success response
-    setSuccess('Password changed successfully.');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    try {
+      // Gửi yêu cầu đổi mật khẩu đến API backend
+      const response = await requestApi.putRequest(`/auth/update-password/${user.id}`, {
+        oldPassword,
+        newPassword,
+      });
+      
+      if (response.data.message) {
+        setSuccess('Password changed successfully.');
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'An error occurred while changing password.');
+    }
   };
 
   return (
@@ -56,8 +61,8 @@ const ChangePassword = () => {
               label="Current Password"
               type="password"
               fullWidth
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
             />
           </Box>
           <Box mb={2}>

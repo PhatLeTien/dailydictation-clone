@@ -1,56 +1,176 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import { FaArrowLeft, FaArrowRight, FaRedo } from "react-icons/fa";
+import {
+  FaRedo,
+  FaArrowLeft,
+  FaArrowRight,
+  FaVolumeUp,
+  FaCheck,
+  FaTimes,
+  FaPlayCircle,
+  FaPause,
+  FaPaperPlane,
+  FaThumbsUp,
+  FaThumbsDown,
+  FaReply
+} from "react-icons/fa";
 import requestApi from '../helpers/api';
-import axios from "axios";
+import { useAuth } from '../ContextAPI/authContext';
 
-const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
+
+const DetailView = ({ onBack,  progress }) => {
   const [transcript, setTranscript] = useState([]);
   const [inputText, setInputText] = useState("");
   const [currentCaption, setCurrentCaption] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
-  const [translatedText, setTranslatedText] = useState("");
-  const [targetLanguage, setTargetLanguage] = useState('vi');
-  const [showTranslation, setShowTranslation] = useState(false);
-  // Thêm state mới
-  const [completedCount, setCompletedCount] = useState(0); // Đếm số câu đã hoàn thành
-  const videoRef = useRef(null);
+  const [completedCount, setCompletedCount] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const playerRef = useRef(null);
-  const intervalRef = useRef(null);
   const [isStarted, setIsStarted] = useState(false);
   const [currentCaptionIndex, setCurrentCaptionIndex] = useState(0);
+  const [videoSize, setVideoSize] = useState("medium");
+  const [isVideoHidden, setIsVideoHidden] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState("");
+
+  const videoRef = useRef(null);
+  const playerRef = useRef(null);
+  const intervalRef = useRef(null);
   const { videoId } = useParams();
   const [video, setVideo] = useState(null);
 
 
 
+  // Thêm state mới
+  // Đếm số câu đã hoàn thành
 
 
+
+
+  const [newComment, setNewComment] = useState('');
+  const [repComment, setRepComment] = useState('');
+  const { user, logout } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+
+  const handleCreateComment = async () => {
+    if (!newComment.trim()) {
+      alert('Nội dung bình luận không được để trống!');
+      return;
+    }
+
+    if (!user) {
+      alert('Vui lòng đăng nhập trước khi bình luận!');
+      return;
+    }
+
+    try {
+      const createCommentDto = {
+        content: newComment,
+        userId: user.id, // ID người dùng hiện tại
+        videoId: video.id, // ID video hiện tại
+      };
+
+      // Gửi yêu cầu tạo bình luận
+      const response = await requestApi.postRequest('/comment/create', createCommentDto);
+      if (response.status === 201) {
+        setNewComment(''); // Xóa nội dung bình luận sau khi gửi thành công
+        fetchComments();
+      } else {
+        console.error('Tạo bình luận thất bại:', response);
+      }
+    } catch (error) {
+      console.error('Đã xảy ra lỗi khi tạo bình luận:', error);
+    }
+  };
+
+  const handleReplySubmit = async (parentId) => {
+    if (!repComment.trim()) {
+      alert('Nội dung bình luận không được để trống!');
+      return;
+    }
+
+    if (!user) {
+      alert('Vui lòng đăng nhập trước khi bình luận!');
+      return;
+    }
+
+    try {
+      const createCommentDto = {
+        content: repComment,
+        userId: user.id, // ID người dùng hiện tại
+        videoId: video.id,
+        parentId, // ID bình luận cha // ID video hiện tại
+      };
+
+      // Gửi yêu cầu tạo bình luận
+      const response = await requestApi.postRequest('/comment/create', createCommentDto);
+      if (response.status === 201) {
+        setRepComment('');
+        fetchComments();// Xóa nội dung bình luận sau khi gửi thành công
+      } else {
+        console.error('Tạo bình luận thất bại:', response);
+      }
+    } catch (error) {
+      console.error('Đã xảy ra lỗi khi tạo bình luận:', error);
+    }
+  };
+
+  const fetchComments = async () => {
+    try {
+      setLoading(true);
+      const response = await requestApi.getRequest(`/comment/${videoId}`); // Endpoint lấy tất cả comments
+      setComments(response.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   useEffect(() => {
-    const fetchVideo = async () => {
+    const fetchComments = async () => {
       try {
-        const response = await requestApi(`/videos/getVideo/${videoId}`, 'GET');
-        if (response.status !== 200) {
-          throw new Error('Video not found');
-        }
-        const videoData = response.data;
-        setVideo(videoData);
-
-        // Lấy đường dẫn transcript và gọi hàm fetchAndParseVTT
-        if (videoData.transcript_path) {
-          fetchAndParseVTT(videoData.transcript_path);
-        }
+        setLoading(true);
+        const response = await requestApi.getRequest(`/comment/${videoId}`); // Endpoint lấy tất cả comments
+        setComments(response.data);
       } catch (err) {
-        console.error('Error fetching video:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchVideo();
-  }, [videoId]);
+    fetchComments();
+  }, []);
+
+  const handleLike = (id) => {
+    setComments(
+      comments.map((comment) =>
+        comment.id === id ? { ...comment, likes: comment.likes + 1 } : comment
+      )
+    );
+  };
+
+  const handleDislike = (id) => {
+    setComments(
+      comments.map((comment) =>
+        comment.id === id ? { ...comment, dislikes: comment.dislikes + 1 } : comment
+      )
+    );
+  };
+
+  const toggleReplyBox = (id) => {
+    setComments(
+      comments.map((comment) =>
+        comment.id === id
+          ? { ...comment, showReplyBox: !comment.showReplyBox }
+          : comment
+      )
+    );
+  };
 
 
 
@@ -78,10 +198,34 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
       }
 
       setTranscript(transcriptData);
+      if (progress && progress.currentCaptionIndex) {
+        setCurrentTime(progress.currentTime || 0);
+      }
     } catch (error) {
       console.error("Error fetching VTT file:", error);
     }
   };
+
+  useEffect(() => {
+    const fetchVideo = async () => {
+      try {
+        const response = await requestApi(`/videos/getVideo/${videoId}`, 'GET');
+        if (response.status !== 200) {
+          throw new Error('Video not found');
+        }
+        const videoData = response.data;
+        setVideo(videoData);
+
+        if (videoData.transcript_path) {
+          fetchAndParseVTT(videoData.transcript_path);
+        }
+      } catch (err) {
+        console.error('Error fetching video:', err);
+      }
+    };
+
+    fetchVideo();
+  }, [videoId]);
 
   useEffect(() => {
     if (video) {
@@ -104,6 +248,9 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
             onStateChange: onPlayerStateChange,
           },
         });
+        if (progress && progress.currentTime) {
+          playerRef.current.seekTo(progress.currentTime, true);
+        }
       };
 
       const onPlayerReady = () => {
@@ -112,11 +259,13 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
 
       const onPlayerStateChange = (event) => {
         if (event.data === window.YT.PlayerState.PLAYING) {
+          setIsPaused(false);
           intervalRef.current = setInterval(() => {
             const currentVideoTime = playerRef.current.getCurrentTime();
             setCurrentTime(currentVideoTime);
           }, 100);
         } else if (event.data === window.YT.PlayerState.PAUSED || event.data === window.YT.PlayerState.ENDED) {
+          setIsPaused(true);
           clearInterval(intervalRef.current);
         }
       };
@@ -132,13 +281,12 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
         window.onYouTubeIframeAPIReady = null;
       };
     }
-  }, [video]);
+  }, [video, progress]);
 
   useEffect(() => {
     if (playerRef.current && transcript.length > 0 && isStarted) {
       const currentCaption = transcript[currentCaptionIndex];
       if (currentTime >= currentCaption.startTime && currentTime <= currentCaption.endTime) {
-
         setCurrentCaption(currentCaption);
 
         if (currentTime >= currentCaption.endTime - 0.2) {
@@ -152,34 +300,43 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
 
   const checkSpelling = () => {
     if (currentCaption) {
-      const input = inputText.trim().toLowerCase().replace(/\s+/g, ' '); // Xử lý khoảng trắng thừa
+      const input = inputText.trim().toLowerCase().replace(/\s+/g, ' ');
       const caption = currentCaption.captionText.trim().toLowerCase().replace(/\s+/g, ' ');
 
       if (input === caption) {
-        setFeedbackMessage("Correct");
+        setFeedbackMessage("Correct! Well done.");
+        saveProcess();
       } else {
-        setFeedbackMessage("Incorrect");
+        setFeedbackMessage(`Oops! The correct caption is: "${currentCaption.captionText}"`);
       }
     }
   };
 
-
-  const handleContinue = async () => {
-    if (currentCaption && currentCaption.captionText) { // Kiểm tra captionText
+  const handleContinue = () => {
+    if (currentCaption) {
       setInputText(currentCaption.captionText);
-      setShowTranslation(true); // Hiển thị phần dịch khi bấm skip
-  
-      // // Dịch câu trả lời (captionText) nếu cần
-      // const translatedText = await fetchTranslation(currentCaption.captionText, targetLanguage); // Dịch theo ngôn ngữ đích
-      // setTranslatedText(translatedText); // Lưu kết quả dịch vào state
     }
   };
-  
+
+
+
+  const handlePausePlay = () => {
+    if (playerRef.current) {
+      if (isPaused) {
+        playerRef.current.playVideo();
+      } else {
+        playerRef.current.pauseVideo();
+      }
+    }
+  };
 
   const handleStartDictation = () => {
     setIsStarted(true);
     if (playerRef.current) {
-      playerRef.current.seekTo(0, true);
+      // If progress exists, don't seek to 0
+      if (!progress) {
+        playerRef.current.seekTo(0, true);
+      }
       playerRef.current.playVideo();
     }
   };
@@ -212,128 +369,351 @@ const DetailView = ({ title, videoUrl, transcriptFile, onBack }) => {
     }
   };
 
+  const saveProcess = async () => {
+    try {
+      // Ensure we have a user and video
+      if (!user || !video) {
+        console.error('User or video not found');
+        return;
+      }
+  
+      // Calculate completion percentage
+      const progress = (completedCount / transcript.length) * 100;
+  
+      // Get the current time of the last completed caption
+      const currentProcessTime = transcript[completedCount - 1]?.startTime || 0;
+  
+      // Prepare the payload for saving process
+      const processPayload = {
+        userId: user.id,
+        videoId: parseInt(videoId),
+        currentTime: currentProcessTime,
+        completionPercentage: progress
+      };
+  
+      // Make API call to save process
+      const response = await requestApi.postRequest('/user_process/save', processPayload);
+  
+      // Optional: Log success or handle response
+      console.log('Learning progress saved:', response);
+    } catch (error) {
+      console.error('Error saving learning progress:', error);
+    }
+  };
+
 
 
   return (
-    <div className="p-4 border rounded shadow-lg bg-white max-w-lg mx-auto">
-      <button onClick={onBack} className="mb-4 bg-gray-300 px-2 py-1 rounded">
-        Quay lại
-      </button>
-      <div className="flex justify-between items-center mb-4">
-        {/* Tiêu đề */}
-        <h2 className="text-2xl font-semibold">{video?.title}</h2>
+    <div className="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex justify-center items-center p-4">
+      <div className="bg-white shadow-2xl rounded-3xl w-full max-w-4xl overflow-hidden border border-blue-100">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-5 flex justify-between items-center">
+          <button
+            onClick={onBack}
+            className="hover:bg-blue-600 p-3 rounded-full transition-colors"
+          >
+            <FaArrowLeft className="text-2xl" />
+          </button>
+          <h2 className="text-2xl font-bold text-center flex-grow">
+            {video?.title || "Dictation Learning"}
+          </h2>
+        </div>
 
-        {/* Điều khiển */}
+        {/* Video Section */}
+        <div className={`transition-all duration-300 ${isVideoHidden ? 'h-0 overflow-hidden' : ''}`}>
+          <div
+            className={`border-b p-2 bg-gray-100 ${videoSize === 'small' ? 'h-64' :  // Tăng từ 'h-48'
+              videoSize === 'medium' ? 'h-96' : // Tăng từ 'h-64'
+                'h-[500px]'                      // Tăng từ 'h-80'
+              }`}
+          >
+            <div ref={videoRef} className="video-player w-full h-full rounded-lg" />
+          </div>
+        </div>
+
+        {/* Controls */}
         {isStarted && (
-          <div className="flex items-center gap-2">
-            {/* Replay */}
-            <FaRedo className="cursor-pointer text-blue-500" title="Replay" />
-            {/* Current Caption */}
-            <span className="min-w-[50px] text-center">
-              {currentCaptionIndex + 1} / {transcript.length}
-            </span>
-            {/* Previous */}
-            <FaArrowLeft
-              className={`cursor-pointer ${currentCaptionIndex === 0 ? "text-gray-400 cursor-not-allowed" : "text-blue-500"}`}
-              title="Previous"
-              onClick={handlePrevCaption}
-            />
-            {/* Next */}
-            <FaArrowRight
-              className={`cursor-pointer ${currentCaptionIndex === transcript.length - 1 ? "text-gray-400 cursor-not-allowed" : "text-blue-500"}`}
-              title="Next"
-              onClick={handleNextCaption}
-            />
+          <div className="px-6 py-4 bg-gray-50 flex justify-between items-center">
+            <div className="flex items-center space-x-6">
+              <FaRedo
+                className="text-blue-500 hover:text-blue-600 cursor-pointer text-2xl"
+                title="Replay"
+              />
+              <div className="flex items-center space-x-4">
+                <FaArrowLeft
+                  className={`text-2xl ${currentCaptionIndex === 0
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-blue-500 hover:text-blue-600 cursor-pointer'
+                    }`}
+                  onClick={handlePrevCaption}
+                  title="Previous Caption"
+                />
+                <span className="text-sm text-gray-600 font-semibold">
+                  {currentCaptionIndex + 1} / {transcript.length}
+                </span>
+                <FaArrowRight
+                  className={`text-2xl ${currentCaptionIndex === transcript.length - 1
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-blue-500 hover:text-blue-600 cursor-pointer'
+                    }`}
+                  onClick={handleNextCaption}
+                  title="Next Caption"
+                />
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handlePausePlay}
+                className="text-blue-500 hover:text-blue-600"
+              >
+                {isPaused ? <FaPlayCircle className="text-2xl" /> : <FaPause className="text-2xl" />}
+              </button>
+              <select
+                value={videoSize}
+                onChange={(e) => setVideoSize(e.target.value)}
+                className="rounded px-3 py-2 text-sm border border-blue-200"
+              >
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+              <button
+                onClick={() => setIsVideoHidden(!isVideoHidden)}
+                className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm transition-colors"
+              >
+                {isVideoHidden ? 'Show Video' : 'Hide Video'}
+              </button>
+            </div>
           </div>
         )}
-      </div>
 
-      <div className="border rounded mb-4 overflow-hidden shadow">
-        <div ref={videoRef} className="video-player" style={{ width: "100%", height: "315px" }} />
-      </div>
+        {/* Caption and Input Section */}
+        {isStarted && (
+          <div className="p-6 space-y-5">
 
-      {isStarted && (
-        <>
-          <div className="flex flex-col items-center gap-4 mb-4">
-            {/* Input Text */}
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Type what you hear..."
-              className="border rounded w-full max-w-md px-4 py-3 text-lg h-28 resize-none"
+              className="w-full border-2 border-blue-200 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-blue-300 h-32 resize-none text-gray-800 text-base"
             />
 
-            {/* Buttons */}
-            <div className="flex gap-4">
-              <button onClick={checkSpelling} className="bg-blue-500 text-white px-6 py-2 rounded">
-                Check
+            <div className="flex justify-center space-x-6">
+              <button
+                onClick={checkSpelling}
+                className="bg-blue-500 text-white px-8 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center shadow-md"
+              >
+                <FaCheck className="mr-2 text-lg" /> Check
               </button>
-              <button onClick={handleContinue} className="border px-6 py-2 rounded">
-                Skip
+              <button
+                onClick={handleContinue}
+                className="border-2 border-blue-500 text-blue-500 px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors flex items-center"
+              >
+                <FaTimes className="mr-2 text-lg" /> Skip
               </button>
             </div>
-          </div>
 
-          {/* Hiển thị phản hồi chính tả */}
-          {feedbackMessage && (
-            <div className={`mt-2 mb-2 text-center text-lg font-semibold ${feedbackMessage.includes("Correct") ? 'text-green-500' : 'text-red-500'}`}>
-              {feedbackMessage.includes("Correct") ? "✔ You are correct!" : "❗ Incorrect"}
-            </div>
-          )}
-          {/* Hiển thị div phiên dịch khi người dùng bấm Skip */}
-          {showTranslation && (
-            <div className="mt-4 p-4 mb-4 border rounded shadow-lg bg-gray-100">
-              {/* Phần "Translation" và dropdown */}
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm text-gray-600">Translation</span>
-                <select
-                  className="border rounded px-2 py-1 text-sm"
-                  value={targetLanguage}
-                  onChange={(e) => setTargetLanguage(e.target.value)}
-                >
-                  <option value="en">English</option>
-                  <option value="vi">Vietnamese</option>
-                  <option value="fr">French</option>
-                  <option value="de">German</option>
-                  {/* Thêm các ngôn ngữ khác nếu cần */}
-                </select>
+            {feedbackMessage && (
+              <div
+                className={`p-4 rounded-lg text-center font-semibold text-lg shadow-md ${feedbackMessage.includes("Correct")
+                  ? 'bg-green-500 text-white'
+                  : 'bg-red-500 text-white'
+                  }`}
+              >
+                {feedbackMessage}
               </div>
-
-              {/* Nội dung phiên dịch */}
-              <p className="text-lg mt-2">{translatedText || 'Đây là phần phiên dịch cho đoạn văn mà bạn đang nghe...'}</p>
-            </div>
-
-          )}
-
-
-          <div className="flex justify-between items-center">
-            <div>
-              <label htmlFor="videoSize" className="mr-2 text-sm">Video size:</label>
-              <select id="videoSize" className="border rounded px-2 py-1">
-                <option value="large">Large</option>
-                <option value="medium">Medium</option>
-                <option value="small">Small</option>
-              </select>
-            </div>
-            <button className="px-4 py-1 border rounded">Hide video</button>
+            )}
+           
           </div>
-        </>
-      )}
+        )}
 
-      {!isStarted && (
-        <button onClick={handleStartDictation} className="bg-blue-500 text-white px-4 py-2 rounded">
-          Start Dictation
-        </button>
-      )}
+        {/* Main Content */}
+        <div className="p-6 space-y-6">
+          {/* Comments Section */}
+          {isStarted && (
+            <div className="mt-6">
+              <h3 className="text-xl font-semibold text-gray-800">Comments</h3>
+              <div className="space-y-4 mt-4">
+                {/* Comment List */}
+                <div className="max-h-72 overflow-y-auto">
+                  {comments.map((comment) => (
+                    <div
+                      key={comment.id}
+                      className="flex flex-col space-y-3 bg-gray-50 border border-blue-200 rounded-lg p-4 shadow-sm"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="bg-blue-100 rounded-full h-10 w-10 flex items-center justify-center font-bold text-blue-600">
+                          <img
+                            src={`/avatar/${comment.user.avatar}`}  // Trỏ tới thư mục public/avatar
+                            alt="User Avatar"
+                            className="rounded-full h-full w-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-gray-800">{comment.user.username}</p>
+                          <span className="text-sm text-gray-500">{comment.content}</span>
+                        </div>
+                      </div>
+
+                      {/* Like, Dislike, and Reply */}
+                      <div className="flex space-x-4 text-sm text-gray-600">
+                        <button
+                          onClick={() => handleLike(comment.id)}
+                          className="flex items-center space-x-1 hover:text-blue-500"
+                        >
+                          <FaThumbsUp />
+                          <span>{comment.likes}</span>
+                        </button>
+                        <button
+                          onClick={() => handleDislike(comment.id)}
+                          className="flex items-center space-x-1 hover:text-red-500"
+                        >
+                          <FaThumbsDown />
+                          <span>{comment.dislikes}</span>
+                        </button>
+                        <button
+                          onClick={() => toggleReplyBox(comment.id)}
+                          className="flex items-center space-x-1 hover:text-green-500"
+                        >
+                          <FaReply />
+                          <span>Reply</span>
+                        </button>
+                      </div>
+
+
+                      {/* Reply Input Box */}
+                      {comment.showReplyBox && (
+                        <div className="mt-3 pl-12">
+                          <input
+                            type="text"
+                            value={repComment}
+                            onChange={(e) => setRepComment(e.target.value)} // Cập nhật repComment
+                            placeholder="Write your reply..."
+                            className="w-full border border-blue-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleReplySubmit(comment.id); // Truyền ID bình luận cha
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
+
+
+
+                      {/* Replies */}
+                      {/* Replies */}
+                      {comment.replies.length > 0 && (
+                        <div className="pl-12 mt-3 space-y-2">
+                          {comment.replies.map((reply) => (
+                            <div
+                              key={reply.id}
+                              className="flex flex-col bg-gray-100 border border-gray-200 rounded-lg p-3"
+                            >
+                              {/* Avatar và Nội dung */}
+                              <div className="flex items-start space-x-3">
+                                <div className="bg-green-100 rounded-full h-8 w-8 flex items-center justify-center font-bold text-green-600">
+                                  <img
+                                    src={`/avatar/${reply.user.avatar}`} // Trỏ tới thư mục public/avatar
+                                    alt="User Avatar"
+                                    className="rounded-full h-full w-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-gray-800">{reply.user.username}</p>
+                                  <span className="text-sm text-gray-500">{reply.content}</span>
+                                </div>
+                              </div>
+
+                              {/* Các nút hành động */}
+                              <div className="flex space-x-4 text-sm text-gray-600 mt-2">
+                                <button
+                                  onClick={() => handleLike(reply.id)} // Thích reply
+                                  className="flex items-center space-x-1 hover:text-blue-500"
+                                >
+                                  <FaThumbsUp />
+                                  <span>{reply.likes}</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDislike(reply.id)} // Không thích reply
+                                  className="flex items-center space-x-1 hover:text-red-500"
+                                >
+                                  <FaThumbsDown />
+                                  <span>{reply.dislikes}</span>
+                                </button>
+                                <button
+                                  onClick={() => toggleReplyBox(reply.id)} // Mở hộp trả lời cho reply này
+                                  className="flex items-center space-x-1 hover:text-green-500"
+                                >
+                                  <FaReply />
+                                  <span>Reply</span>
+                                </button>
+                              </div>
+
+                              {/* Reply Input Box */}
+                              {reply.showReplyBox && (
+                                <div className="mt-3 pl-12">
+                                  <input
+                                    type="text"
+                                    value={repComment}
+                                    onChange={(e) => setRepComment(e.target.value)} // Cập nhật repComment
+                                    placeholder="Write your reply..."
+                                    className="w-full border border-blue-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        handleReplySubmit(reply.id); // Truyền ID bình luận cha
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                    </div>
+                  ))}
+                  {comments.length === 0 && (
+                    <p className="text-gray-500 text-center">No comments yet. Be the first to comment!</p>
+                  )}
+                </div>
+
+                {/* Comment Input */}
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Write a comment..."
+                    className="flex-grow border border-blue-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  />
+                  <button
+                    onClick={handleCreateComment}
+                    className="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-blue-600 transition-all flex items-center"
+                  >
+                    <FaPaperPlane className="mr-2" /> Send
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Start Button */}
+        {!isStarted && (
+          <div className="flex justify-center p-8">
+            <button
+              onClick={handleStartDictation}
+              className="bg-blue-500 text-white px-12 py-4 rounded-full hover:bg-blue-600 transition-colors shadow-2xl text-xl flex items-center"
+            >
+              <FaPlayCircle className="mr-3" /> Start Dictation
+            </button>
+          </div>
+        )}
+      </div>
     </div>
-
- 
   );
 };
 
 export default DetailView;
-
-
-
-
-

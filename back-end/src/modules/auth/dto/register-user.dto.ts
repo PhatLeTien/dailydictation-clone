@@ -4,8 +4,8 @@ export class RegisterUserDTO {
     username: string;
     email: string;
     password: string;
-    roleId: number;
-
+    roleId?: number;
+    avatar: string;
 }
 
 // Chức năng: Định nghĩa cấu trúc dữ liệu mà controller sẽ nhận khi thực hiện yêu cầu đăng ký người dùng.

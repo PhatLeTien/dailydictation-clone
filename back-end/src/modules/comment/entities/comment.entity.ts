@@ -22,23 +22,21 @@ export class Comment {
     @ManyToOne(() => User, (user) => user.comments, { onDelete: 'CASCADE' })
     user: User;
 
-    // Liên kết với bình luận cha (nếu là reply)
-    @ManyToOne(() => Comment, (comment) => comment.replies, { nullable: true, onDelete: 'CASCADE' })
-    parent: Comment;
-
-    // Liên kết với các reply của bình luận này
-    @OneToMany(() => Comment, (comment) => comment.parent)
+    @OneToMany(() => Comment, comment => comment.parent)
     replies: Comment[];
+    
+    @ManyToOne(() => Comment, comment => comment.replies)
+    parent: Comment;
 
     // Liên kết với Video (video mà bình luận thuộc về)
     @ManyToOne(() => Video, (video) => video.comments, { onDelete: 'CASCADE' })
     video: Video;
 
-    // @Column({ type: 'int', default: 0 })
-    // likeCount: number; // Số lượng like
+    @Column({ type: 'int', default: 0 })
+    likeCount: number; // Số lượng like
 
-    // @Column({ type: 'int', default: 0 })
-    // dislikeCount: number; // Số lượng dislike
+    @Column({ type: 'int', default: 0 })
+    dislikeCount: number; // Số lượng dislike
 
     @CreateDateColumn()
     created_at: Date;

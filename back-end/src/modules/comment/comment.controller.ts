@@ -17,7 +17,7 @@ export class CommentController {
   // Route để lấy tất cả comment hoặc comment theo videoId
   @Get(':videoId?')
   async getComments(@Param('videoId') videoId?: number): Promise<Comment[]> {
-    return await this.commentService.getComments(videoId);
+    return await this.commentService.getCommentsWithRepliesQueryBuilder(videoId);
   }
 
   // Route để cập nhật comment

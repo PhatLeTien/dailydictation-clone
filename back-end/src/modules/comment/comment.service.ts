@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Comment } from './entities/comment.entity'; // Import entity của bạn
 import { CreateCommentDto } from './dto/comment.dto'; // Tạo DTO này để nhận dữ liệu đầu vào
 import { UpdateCommentDto } from './dto/comment.dto'; // Tạo DTO để cập nhật comment
@@ -59,22 +59,37 @@ export class CommentService {
         return await this.commentRepository.save(newComment); // Lưu bình luận mới
     }
 
-    // Lấy tất cả comment hoặc comment theo video
-    async getComments(videoId?: number): Promise<Comment[]> {
-        const query = this.commentRepository.createQueryBuilder('comment')
-            .leftJoinAndSelect('comment.user', 'user')
-            .leftJoinAndSelect('comment.video', 'video')
-            .leftJoinAndSelect('comment.replies', 'replies') // Liên kết với bình luận con
-            .addSelect('user.username') // Lấy tên người dùng
-            .addSelect('comment.content'); // Lấy nội dung bình luận
+   // Trong CommentService
 
-        if (videoId) {
-            query.where('comment.videoId = :videoId', { videoId });
-        }
+ 
 
-        return await query.getMany();
-    }
+// Alternative method using QueryBuilder for more complex queries
+async getCommentsWithRepliesQueryBuilder(videoId: number): Promise<Comment[]> {
+    const queryBuilder = this.commentRepository
+        .createQueryBuilder('comment')
+        .leftJoinAndSelect('comment.user', 'user')  // Left join với user của bình luận gốc
+        .leftJoinAndSelect('comment.replies', 'replies') // Left join với replies
+        .leftJoinAndSelect('replies.user', 'replyUser') // Left join với user của reply
+        .where('comment.videoId = :videoId', { videoId })
+        .andWhere('comment.parent IS NULL') // Lọc chỉ lấy các bình luận gốc
+        .orderBy('comment.created_at', 'ASC') // Sắp xếp theo thời gian tạo của bình luận
+        .addOrderBy('replies.created_at', 'ASC') // Sắp xếp theo thời gian tạo của reply
+       
+    const comments = await queryBuilder.getMany();
+    return comments;
+}
 
+
+
+
+
+
+    
+    
+    
+    
+    
+    
     // Cập nhật comment
     async updateComment(id: number, updateCommentDto: UpdateCommentDto): Promise<Comment> {
         const comment = await this.commentRepository.findOneBy({ id });

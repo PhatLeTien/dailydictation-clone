@@ -9,10 +9,11 @@ import {
   Button,
   Divider,
 } from '@mui/material';
+import { useAuth } from '../ContextAPI/authContext';
 
 const AccountInformation = () => {
-  const [email, setEmail] = useState('tienphataiki@gmail.com');
-  const [displayName, setDisplayName] = useState('Phát Lê Tiến');
+  
+  const { user, updateUserInfo } = useAuth(); 
   const [googleLogin, setGoogleLogin] = useState(true);
   const [joinDate] = useState('2024-10-27');
   const [totalDays] = useState(40);
@@ -20,13 +21,13 @@ const AccountInformation = () => {
   const [inactiveDays] = useState(37);
   const [activeHours] = useState(0.2);
 
-  const handleEmailChange = (event) => {
-    setEmail(event.target.value);
-  };
+  // const handleEmailChange = (event) => {
+  //   setEmail(event.target.value);
+  // };
 
-  const handleDisplayNameChange = (event) => {
-    setDisplayName(event.target.value);
-  };
+  // const handleDisplayNameChange = (event) => {
+  //   setDisplayName(event.target.value);
+  // };
 
   const handleGoogleLoginDisconnect = () => {
     setGoogleLogin(false);
@@ -43,8 +44,8 @@ const AccountInformation = () => {
             <Typography variant="subtitle1">Email</Typography>
             <TextField
               fullWidth
-              value={email}
-              onChange={handleEmailChange}
+              value={user?.email}
+              // onChange={handleEmailChange}
               InputProps={{
                 endAdornment: (
                   <Button color="primary" size="small">
@@ -60,8 +61,8 @@ const AccountInformation = () => {
             <Typography variant="subtitle1">Display Name</Typography>
             <TextField
               fullWidth
-              value={displayName}
-              onChange={handleDisplayNameChange}
+              value={user?.username}
+              // onChange={handleDisplayNameChange}
               InputProps={{
                 endAdornment: (
                   <Button color="primary" size="small">

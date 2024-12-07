@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChallengeModule } from './modules/challenge/challenge.module';
 import { VideosModule } from './modules/videos/videos.module';
 import { CommentModule } from './modules/comment/comment.module';
+import { UserProcessModule } from './modules/user_process/user_process.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CommentModule } from './modules/comment/comment.module';
     ChallengeModule,
     VideosModule,
     CommentModule,
+    UserProcessModule
   ],
   controllers: [AppController],
   providers: [AppService],

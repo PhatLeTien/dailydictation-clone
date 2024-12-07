@@ -22,8 +22,10 @@ passport.use(
           googleId: profile.id,
           email: profile.emails[0].value,
           username: profile.displayName,
+          avatar: profile.photos?.[0]?.value, // Lấy URL hình ảnh từ Google profile
         };
         done(null, googleUser);
+        
       } catch (error) {
         console.error('GoogleStrategy Error:', error);
         done(error as Error, undefined);

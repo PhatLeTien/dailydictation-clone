@@ -1,18 +1,23 @@
-import { Body, Post, Controller, Get, Req, Res, UseGuards, HttpException, HttpStatus } from '@nestjs/common';
+import { Body, Post, Controller, Get, Req, Res, UseGuards, HttpException, HttpStatus, Put, Param } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RegisterUserDTO } from './dto/register-user.dto';
 import { AuthService } from './auth.service';
 import { User } from '../auth/entities/user.entity';
 import { LoginUserDTO } from './dto/login-user.dto';
 import { GoogleUserDTO } from './dto/google.dto';
+import { UpdateEmailDTO } from './dto/update-email.dto';
+import { UpdatePasswordDTO } from './dto/update-password.dto';
+
 import { Request, Response } from 'express';
 //Xác định controller cho các yêu cầu đến route /auth.
 @Controller('auth')
 export class AuthController {
 
+  
 
     //Điều này cho phép bạn gọi các phương thức của AuthService từ AuthController
     constructor(private authService: AuthService) { }
+    
 
     //Đánh dấu phương thức register để xử lý các yêu cầu POST đến route /auth/register.
     @Post('register')
@@ -46,7 +51,7 @@ export class AuthController {
         // Request sẽ được chuyển hướng đến Google để xác thực.
     }
 
-   
+
     // Handle Google OAuth callback
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
@@ -57,6 +62,7 @@ export class AuthController {
                 googleId: req.user.googleId,
                 email: req.user.email,
                 username: req.user.username,
+                avatar: req.user.avatar, 
             };
 
             // Process login with Google user data
@@ -77,5 +83,34 @@ export class AuthController {
             res.status(HttpStatus.FOUND).redirect('/login/error');
         }
     }
+
+    // Endpoint để cập nhật email người dùng
+    @Put('update-email/:userId')
+    async updateEmail(
+        @Param('userId') userId: number, // Lấy userId từ tham số URL
+        @Body() updateEmailDTO: UpdateEmailDTO, // Lấy thông tin email mới từ body request
+    ): Promise<any> {
+        try {
+            return await this.authService.updateEmail(updateEmailDTO, userId); // Gọi service để cập nhật email
+        } catch (error) {
+            // Bắt lỗi nếu có và trả về thông báo lỗi tương ứng
+            throw new HttpException(error.response || 'Internal server error', error.status || HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Put('update-password/:userId')
+    async changePassword(
+        @Param('userId') userId: number, // Lấy userId từ tham số URL
+        @Body() updatePasswordDTO: UpdatePasswordDTO, // Lấy thông tin email mới từ body request
+    ): Promise<any> {
+        try {
+            return await this.authService.changePassword(userId, updatePasswordDTO); // Gọi service để cập nhật email
+        } catch (error) {
+            // Bắt lỗi nếu có và trả về thông báo lỗi tương ứng
+            throw new HttpException(error.response || 'Internal server error', error.status || HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
 
 }

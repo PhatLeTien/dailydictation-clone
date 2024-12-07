@@ -1,15 +1,9 @@
 // src/modules/users/entities/user.entity.ts
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
-    OneToMany
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Role } from '../entities/role.entity';
-import { Comment } from 'src/modules/comment/entities/comment.entity'; // Chỉnh sửa đường dẫn nếu cần
+import { Comment } from 'src/modules/comment/entities/comment.entity';
+import { UserProcess } from '../../user_process/entities/user_process.entity';
+
 
 @Entity('users')
 export class User {
@@ -37,11 +31,23 @@ export class User {
     @UpdateDateColumn({ type: 'timestamp' })
     updatedAt: Date;
 
+    @Column({ nullable: true, length: 500 })
+    avatar?: string;
+
+    // Thêm cột roleId
+    @Column({ type: 'int', nullable: true })
+    roleId: number;
+
     // Many-to-One relation with Role
     @ManyToOne(() => Role, (role) => role.users)
-    role: Role; // Thay đổi từ 'roles' sang 'role'
+    @JoinColumn({ name: 'roleId' })  // Liên kết với roleId
+    role: Role;
 
-     // Liên kết với Comment (các bình luận mà người dùng viết)
-     @OneToMany(() => Comment, (comment) => comment.user)
-     comments: Comment[];
+    @OneToMany(() => Comment, (comment) => comment.user)
+    comments: Comment[];
+
+
+    // Liên kết với tiến trình người dùng
+    @OneToMany(() => UserProcess, (userProcess) => userProcess.user)
+    userProcesses: UserProcess[];
 }

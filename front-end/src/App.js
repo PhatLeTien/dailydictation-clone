@@ -9,7 +9,7 @@ import Login from "./Pages/Login";
 import Register from "./Pages/Register";
 import AllExercises from "./Pages/AllExercises";
 import TopUsers from "./Pages/TopUsers";
-import Help from "./Components/Helpme";
+import Help from "./Pages/Help";
 
 import PronunciationComponent from "./Pages/english-pronunciation";
 
@@ -26,6 +26,13 @@ import Lessons from './Admin/Pages/Lessons';
 import Statistics from './Admin/Pages/Statistics';
 import Settings from './Admin/Pages/Settings';
 import NotFound from './Admin/Pages/NotFound';
+
+import AccountInformation from "./Pages/AccountInformation";
+import Notifications from "./Pages/Notifications";
+import Comments from "./Pages/Comments";
+import ChangePassword from "./Pages/ChangePassword";
+import ChangeEmail from "./Pages/ChangeEmail";
+import FavoritesLessons from "./Pages/FavoritesLessons";
 
 const App = () => {
   const [theme, setTheme] = useState("light"); // default to 'light'
@@ -50,9 +57,9 @@ const App = () => {
   return (
     <AuthProvider>
       <Router>
-      <div className={`${theme === "dark" ? "bg-gray-900 text-white" : "bg-white text-black"} app-container`}>
-            {/* Chỉ hiển thị Header và Footer khi không phải route admin */}
-            {!window.location.pathname.startsWith('/admin') && (
+        <div className={`${theme === "dark" ? "bg-gray-900 text-white" : "bg-white text-black"} app-container`}>
+          {/* Chỉ hiển thị Header và Footer khi không phải route admin */}
+          {!window.location.pathname.startsWith('/admin') && (
             <Header theme={theme} toggleTheme={toggleTheme} />
           )}
           <div className="content">
@@ -62,7 +69,13 @@ const App = () => {
               <Route path="/top-users" element={<TopUsers theme={theme} />} />
               <Route path="/learntogether" element={<LearnTogether theme={theme} />} />
               <Route path="/support-dailydictation" element={<Help theme={theme} />} />
-             
+
+              <Route path="/account-information" element={<AccountInformation theme={theme} />} />
+              <Route path="/notifications" element={<Notifications theme={theme} />} />
+              <Route path="/comments" element={<Comments theme={theme} />} />
+              <Route path="/favorite-lessons" element={<FavoritesLessons theme={theme} />} />
+              <Route path="/change-password" element={<ChangePassword theme={theme} />} />
+              <Route path="/change-email" element={<ChangeEmail theme={theme} />} />
 
               <Route path="/challenge/:slug" element={<VideoList />} />
 
@@ -71,23 +84,22 @@ const App = () => {
               <Route path="/register" element={<Register theme={theme} />} />
               <Route path="/english-pronunciation" element={<PronunciationComponent theme={theme} />} />
 
-                {/* Admin Routes */}
-                <Route path="/admin/*" element={<AdminLayout />}>
+              {/* Admin Routes */}
+              <Route path="/admin/*" element={<AdminLayout />}>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="lessons" element={<Lessons />} />
                 <Route path="statistics" element={<Statistics />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
-            
+
             </Routes>
           </div>
           <Footer theme={theme} />
-          </div>
+        </div>
       </Router>
     </AuthProvider>
   );
 };
 
 export default App;
-
