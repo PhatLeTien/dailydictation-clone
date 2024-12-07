@@ -73,6 +73,18 @@ async getUserProcessByUserAndVideo(
         relations: ['video'] // Load thông tin video
     });
 }
+
+async getUserProcessByUser(userId: number): Promise<UserProcess[]> {
+    return this.userProcessRepository.find({
+        where: { 
+            user: { id: userId } 
+        },
+        relations: ['video'], // Để load thông tin video cùng với process
+        order: {
+            updatedAt: 'DESC' // Sắp xếp theo thời gian cập nhật mới nhất
+        }
+    });
+}
     
 
 }

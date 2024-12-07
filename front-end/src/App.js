@@ -33,6 +33,7 @@ import Comments from "./Pages/Comments";
 import ChangePassword from "./Pages/ChangePassword";
 import ChangeEmail from "./Pages/ChangeEmail";
 import FavoritesLessons from "./Pages/FavoritesLessons";
+import Completion from "./Pages/Completion";
 
 const App = () => {
   const [theme, setTheme] = useState("light"); // default to 'light'
@@ -73,6 +74,7 @@ const App = () => {
               <Route path="/account-information" element={<AccountInformation theme={theme} />} />
               <Route path="/notifications" element={<Notifications theme={theme} />} />
               <Route path="/comments" element={<Comments theme={theme} />} />
+              <Route path="/completion" element={<Completion theme={theme} />} />
               <Route path="/favorite-lessons" element={<FavoritesLessons theme={theme} />} />
               <Route path="/change-password" element={<ChangePassword theme={theme} />} />
               <Route path="/change-email" element={<ChangeEmail theme={theme} />} />

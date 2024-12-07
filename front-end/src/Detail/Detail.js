@@ -18,7 +18,7 @@ import requestApi from '../helpers/api';
 import { useAuth } from '../ContextAPI/authContext';
 
 
-const DetailView = ({ onBack,  progress }) => {
+const DetailView = ({ onBack, progress }) => {
   const [transcript, setTranscript] = useState([]);
   const [inputText, setInputText] = useState("");
   const [currentCaption, setCurrentCaption] = useState(null);
@@ -32,6 +32,8 @@ const DetailView = ({ onBack,  progress }) => {
   const [isPaused, setIsPaused] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
+  const [isSkipped, setIsSkipped] = useState(false);
+
 
   const videoRef = useRef(null);
   const playerRef = useRef(null);
@@ -316,6 +318,7 @@ const DetailView = ({ onBack,  progress }) => {
     if (currentCaption) {
       setInputText(currentCaption.captionText);
     }
+    setIsSkipped(true); // Khi bấm "Skip", chuyển sang trạng thái bấm "Next"
   };
 
 
@@ -361,6 +364,7 @@ const DetailView = ({ onBack,  progress }) => {
       setCurrentCaptionIndex(currentCaptionIndex + 1);
       setInputText(""); // Reset input
       setFeedbackMessage(null); // Xóa thông báo phản hồi
+      setIsSkipped(false);
       const nextCaption = transcript[currentCaptionIndex + 1];
       if (playerRef.current) {
         playerRef.current.seekTo(nextCaption.startTime, true);
@@ -376,13 +380,13 @@ const DetailView = ({ onBack,  progress }) => {
         console.error('User or video not found');
         return;
       }
-  
+
       // Calculate completion percentage
       const progress = (completedCount / transcript.length) * 100;
-  
+
       // Get the current time of the last completed caption
       const currentProcessTime = transcript[completedCount - 1]?.startTime || 0;
-  
+
       // Prepare the payload for saving process
       const processPayload = {
         userId: user.id,
@@ -390,10 +394,10 @@ const DetailView = ({ onBack,  progress }) => {
         currentTime: currentProcessTime,
         completionPercentage: progress
       };
-  
+
       // Make API call to save process
       const response = await requestApi.postRequest('/user_process/save', processPayload);
-  
+
       // Optional: Log success or handle response
       console.log('Learning progress saved:', response);
     } catch (error) {
@@ -488,9 +492,9 @@ const DetailView = ({ onBack,  progress }) => {
         )}
 
         {/* Caption and Input Section */}
+        {/* Caption and Input Section */}
         {isStarted && (
           <div className="p-6 space-y-5">
-
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -499,18 +503,33 @@ const DetailView = ({ onBack,  progress }) => {
             />
 
             <div className="flex justify-center space-x-6">
-              <button
-                onClick={checkSpelling}
-                className="bg-blue-500 text-white px-8 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center shadow-md"
-              >
-                <FaCheck className="mr-2 text-lg" /> Check
-              </button>
+              {/* Hiển thị nút Check nếu chưa skip */}
+              {!isSkipped && (
+                <button
+                  onClick={checkSpelling}
+                  className="bg-blue-500 text-white px-8 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center shadow-md"
+                >
+                  <FaCheck className="mr-2 text-lg" /> Check
+                </button>
+              )}
+
+              {/* Hiển thị nút Skip */}
               <button
                 onClick={handleContinue}
                 className="border-2 border-blue-500 text-blue-500 px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors flex items-center"
               >
                 <FaTimes className="mr-2 text-lg" /> Skip
               </button>
+
+              {/* Hiển thị nút Next khi đã Skip */}
+              {isSkipped && currentCaptionIndex < transcript.length - 1 && (
+                <button
+                  onClick={handleNextCaption}
+                  className="bg-blue-500 text-white px-8 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center"
+                >
+                  <FaArrowRight className="mr-2 text-lg" /> Next
+                </button>
+              )}
             </div>
 
             {feedbackMessage && (
@@ -523,9 +542,9 @@ const DetailView = ({ onBack,  progress }) => {
                 {feedbackMessage}
               </div>
             )}
-           
           </div>
         )}
+
 
         {/* Main Content */}
         <div className="p-6 space-y-6">

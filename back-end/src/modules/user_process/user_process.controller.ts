@@ -27,5 +27,11 @@ export class UserProcessController {
         return this.userProcessService.getUserProcessByUserAndVideo(userId, videoId);
     }
 
-    
+
+  // Lấy tất cả quá trình học của người dùng
+    @Get('user/:userId')
+    async getUserProcesses(@Param('userId') userId: number) {
+        return this.userProcessService.getUserProcessByUser(userId);
+    }
+
 }

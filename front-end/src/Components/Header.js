@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaCaretDown } from "react-icons/fa";
 import { useAuth } from '../ContextAPI/authContext';
+import requestApi from '../helpers/api';
+
 
 const Header = ({ theme, toggleTheme }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [userProgress, setUserProgress] = useState([]);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -26,6 +29,28 @@ const Header = ({ theme, toggleTheme }) => {
       console.error('Logout error:', error);
     }
   };
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      try {
+        const response = await requestApi(`/user_process/user/${user.id}`, 'GET');
+        if (response.data) {
+          setUserProgress(response.data); // Store progress data in state
+        }
+      } catch (error) {
+        console.error('Error fetching user progress:', error);
+      }
+    };
+
+    if (user) {
+      fetchProgress();
+    }
+  }, [user]);
+
+  
+
+
+
 
   return (
     <header

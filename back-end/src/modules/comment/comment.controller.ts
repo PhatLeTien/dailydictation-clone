@@ -34,4 +34,16 @@ export class CommentController {
   async deleteComment(@Param('id') id: number): Promise<void> {
     return await this.commentService.deleteComment(id);
   }
+
+  @Get('user/:userId')
+  async getCommentsByUser(@Param('userId') userId: number) {
+      try {
+          const comments = await this.commentService.getCommentsByUser(userId);
+          return comments;
+      } catch (error) {
+          // Trả về lỗi nhưng không ném NotFoundException nữa
+          return { message: 'An error occurred while fetching comments', error: error.message };
+      }
+  }
+  
 }

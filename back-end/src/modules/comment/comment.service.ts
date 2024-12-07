@@ -79,6 +79,25 @@ async getCommentsWithRepliesQueryBuilder(videoId: number): Promise<Comment[]> {
     return comments;
 }
 
+// Trong CommentService
+
+// Lấy tất cả bình luận của user theo userId
+async getCommentsByUser(userId: number): Promise<Comment[]> {
+    const comments = await this.commentRepository
+        .createQueryBuilder('comment')
+        .leftJoinAndSelect('comment.user', 'user')  // Join với user để lấy thông tin người dùng
+        .where('comment.userId = :userId', { userId }) // Lọc bình luận theo userId
+        .orderBy('comment.created_at', 'DESC') // Sắp xếp theo thời gian tạo của bình luận
+        .getMany();
+    
+    if (!comments.length) {
+        throw new NotFoundException('No comments found for this user');
+    }
+
+    return comments;
+}
+
+
 
 
 
